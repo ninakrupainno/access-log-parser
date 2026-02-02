@@ -1,7 +1,22 @@
 import java.util.Objects;
 
 class RequestStats {
-    private int total, googlebot, yandexBot;
+    private int total = 0;
+    private int googlebot = 0;
+    private int yandexBot = 0;
+
+    public void addEntry(LogEntry entry) {
+        total++;
+        UserAgent ua = entry.getUserAgent();
+
+        // Используем методы isGooglebot() и isYandexBot() из UserAgent
+        if (ua.isGooglebot()) {
+            googlebot++;
+        }
+        if (ua.isYandexBot()) {
+            yandexBot++;
+        }
+    }
 
     public void addRequest(boolean isGooglebot, boolean isYandexBot) {
         total++;
@@ -10,17 +25,16 @@ class RequestStats {
     }
 
     @Override public String toString() {
-        return String.format("=== Результаты анализа ===\nВсего: %d\nGooglebot: %d (%.2f%%)\nYandexBot: %d (%.2f%%)\n=========================",
-                total, googlebot, total > 0 ? (double) googlebot / total * 100 : 0,
-                yandexBot, total > 0 ? (double) yandexBot / total * 100 : 0);
-    }
+        double googlebotPercent = total > 0 ? (double) googlebot / total * 100 : 0;
+        double yandexBotPercent = total > 0 ? (double) yandexBot / total * 100 : 0;
 
-    @Override public int hashCode() { return Objects.hash(total, googlebot, yandexBot); }
-
-    @Override public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        RequestStats other = (RequestStats) o;
-        return total == other.total && googlebot == other.googlebot && yandexBot == other.yandexBot;
+        return String.format("=== Статистика ботов ===\n" +
+                        "Всего запросов: %d\n" +
+                        "Googlebot: %d (%.2f%%)\n" +
+                        "YandexBot: %d (%.2f%%)\n" +
+                        "=========================",
+                total,
+                googlebot, googlebotPercent,
+                yandexBot, yandexBotPercent);
     }
 }
