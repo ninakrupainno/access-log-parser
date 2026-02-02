@@ -5,76 +5,55 @@ import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
-        int count = 0;
+        Scanner scanner = new Scanner(System.in);
+
         while (true) {
-            int totalLines = 0;
-            int maxLength = 0;
-            int minLength = Integer.MAX_VALUE; // Начинаем с максимального значения
+            System.out.print("Путь к файлу ('exit' для выхода): ");
+            String path = scanner.nextLine();
+            if ("exit".equalsIgnoreCase(path)) break;
 
-            String path = new Scanner(System.in).nextLine();
             File file = new File(path);
-            boolean fileExist = file.exists();
-            boolean isDirectory = file.isDirectory();
-
-            if ((!fileExist) || (isDirectory)) {
-                System.out.println("Указанный файл не существует или это просто папка");
+            if (!file.exists() || file.isDirectory()) {
+                System.out.println("Файл не найден или это директория");
                 continue;
-            } else {
-                count++;
-                System.out.println("Путь указан верно");
-                System.out.println("Это файл номер " + count);
+            }
 
-                try {
-                    FileReader fileReader = new FileReader(path);
-                    BufferedReader reader = new BufferedReader(fileReader);
-                    String line;
+            RequestStats stats = new RequestStats();
 
-                    // Считываем файл построчно
-                    while ((line = reader.readLine()) != null) {
-                        int length = line.length();
+            try (BufferedReader reader = new BufferedReader(new FileReader(path))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    if (line.length() > 1024) throw new TooLongStringException("Строка >1024 символов: " + line.length());
 
-                        // Проверяем длину строки
-                        if (length > 1024) {
-                            throw new TooLongStringException(
-                                    "Обнаружена строка длиной " + length +
-                                            " символов. Максимально допустимая длина: 1024 символа."
-                            );
-                        }
-
-                        // Обновляем статистику
-                        totalLines++;
-                        if (length > maxLength) {
-                            maxLength = length;
-                        }
-                        if (length < minLength) {
-                            minLength = length;
-                        }
-                    }
-
-                    // Закрываем ресурсы
-                    reader.close();
-                    fileReader.close();
-
-                    // Проверяем, был ли файл пустым
-                    if (totalLines == 0) {
-                        minLength = 0; // Если файл пустой, то самая короткая строка имеет длину 0
-                    }
-
-                    // Выводим статистику
-                    System.out.println("=== Статистика файла ===");
-                    System.out.println("Общее количество строк: " + totalLines);
-                    System.out.println("Длина самой длинной строки: " + maxLength);
-                    System.out.println("Длина самой короткой строки: " + minLength);
-                    System.out.println("========================\n");
-
-                } catch (TooLongStringException e) {
-                    // Обрабатываем наше исключение
-                    System.out.println("Ошибка: " + e.getMessage());
-                    break; // Прерываем выполнение программы
-                } catch (Exception ex) {
-                    ex.printStackTrace();
+                    String botName = extractBotName(line);
+                    boolean isGooglebot = "Googlebot".equalsIgnoreCase(botName);
+                    boolean isYandexBot = "YandexBot".equalsIgnoreCase(botName);
+                    stats.addRequest(isGooglebot, isYandexBot);
                 }
+                System.out.println("\n" + stats + "\n");
+            } catch (TooLongStringException e) {
+                System.out.println("Ошибка: " + e.toString()); break;
+            } catch (Exception e) {
+                System.out.println("Ошибка: " + e.getMessage());
             }
         }
+        scanner.close();
+    }
+
+    private static String extractBotName(String line) {
+        int lastQuote = line.lastIndexOf("\"");
+        int secondLastQuote = line.lastIndexOf("\"", lastQuote - 1);
+        if (secondLastQuote == -1 || lastQuote == -1) return null;
+
+        String userAgent = line.substring(secondLastQuote + 1, lastQuote);
+        int open = userAgent.indexOf('('), close = userAgent.indexOf(')', open);
+        if (open == -1 || close == -1) return null;
+
+        String[] parts = userAgent.substring(open + 1, close).split(";");
+        if (parts.length < 2) return null;
+
+        String fragment = parts[1].trim();
+        int slash = fragment.indexOf('/');
+        return slash != -1 ? fragment.substring(0, slash).trim() : fragment.trim();
     }
 }
