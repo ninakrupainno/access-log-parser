@@ -72,6 +72,16 @@ public class AccessLogParser {
                     }
                 }
 
+                // НОВАЯ СТАТИСТИКА: Несуществующие страницы
+                System.out.println("\n=== Несуществующие страницы (код 404) ===");
+                System.out.println("Количество уникальных страниц: " + trafficStats.getNotExistingPagesCount());
+                if (trafficStats.getNotExistingPagesCount() > 0) {
+                    System.out.println("Список страниц:");
+                    for (String page : trafficStats.getNotExistingPages()) {
+                        System.out.println("  - " + page);
+                    }
+                }
+
                 // НОВАЯ СТАТИСТИКА: Операционные системы (доли)
                 System.out.println("\n=== Статистика операционных систем (доли) ===");
                 var osStats = trafficStats.getOsStatistics();
