@@ -11,6 +11,7 @@ class Statistics {
     private int entryCount = 0;
     private Set<String> existingPages = new HashSet<>();
     private Map<String, Integer> osStats = new HashMap<>();
+    private Set<String> notExistingPages = new HashSet<>();
 
     public Statistics() {
         // Конструктор без параметров
@@ -33,6 +34,11 @@ class Statistics {
         // Добавление страницы с кодом ответа 200
         if (entry.getResponseCode() == 200) {
             existingPages.add(entry.getPath());
+        }
+
+        // Добавление страницы с кодом ответа 404
+        if (entry.getResponseCode() == 404) {
+            notExistingPages.add(entry.getPath());
         }
 
         // Обновление статистики операционных систем (с явной проверкой)
@@ -68,6 +74,14 @@ class Statistics {
     public Set<String> getExistingPages() {
         // Возвращаем копию, чтобы защитить внутреннюю коллекцию
         return new HashSet<>(existingPages);
+    }
+
+    /**
+     * Возвращает множество всех несуществующих страниц сайта (с кодом ответа 200)
+     */
+    public Set<String> getNotExistingPages() {
+        // Возвращаем копию, чтобы защитить внутреннюю коллекцию
+        return new HashSet<>(notExistingPages);
     }
 
     /**
@@ -117,5 +131,11 @@ class Statistics {
      */
     public int getExistingPagesCount() {
         return existingPages.size();
+    }
+    /**
+     * Возвращает количество уникальных страниц с кодом ответа 404
+     */
+    public int getNotExistingPagesCount() {
+        return notExistingPages.size();
     }
 }
